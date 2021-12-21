@@ -1,0 +1,25 @@
+{
+  "name": "djbaby",
+  "version": "1.0.0",
+  "description": "Dj Waale Baby",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/dscnitrourkela/project-pineapple.git"
+  },
+  "keywords": [
+    "music",
+    "bot",
+    "discord",
+    "dscnitrourkela"
+  ],
+  "author": "dscnitrourkela",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dscnitrourkela/project-pineapple/issues"
+  },
+  "homepage": "https://github.com/dscnitrourkela/project-pineapple#readme"
+}

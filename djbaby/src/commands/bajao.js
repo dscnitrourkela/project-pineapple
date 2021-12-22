@@ -25,13 +25,17 @@ async function bajao(message, queue) {
   let songList;
   if (info.startsWith("https://open.spotify.com/playlist/")) {
     const playlistID = info.split("/")[4];
-    const data = await axios.get(
-      `https://api.spotify.com/v1/playlists/${playlistID}/tracks`,
-      { headers: { Authorization: `Bearer ${process.env.SPOTIFY_TOKEN}` } }
-    );
-    songList = data.data.items;
-    info = songList[0].track.name;
-    songList.shift();
+    try {
+      const data = await axios.get(
+        `https://api.spotify.com/v1/playlists/${playlistID}/tracks`,
+        { headers: { Authorization: `Bearer ${process.env.SPOTIFY_TOKEN}` } }
+      );
+      songList = data.data.items;
+      info = songList[0].track.name;
+      songList.shift();
+    } catch (error) {
+      console.log(error);
+    }
   }
   if (ytdl.validateURL(info)) {
     const songInfo = await ytdl.getInfo(info);
@@ -73,7 +77,7 @@ async function bajao(message, queue) {
         });
         queueConstructor.connection = connection;
         play(message.guild, queueConstructor.songs[0], queue);
-        if (songList.length > 0) {
+        if (songList && songList.length > 0) {
           songList.map(async (s) => {
             r = await ytSearch(s.track.name);
             if (r.videos.length > 0) {
@@ -92,7 +96,7 @@ async function bajao(message, queue) {
       }
     } else {
       serverQueue.songs.push(song);
-      if (songList.length > 0) {
+      if (songList && songList.length > 0) {
         songList.map(async (s) => {
           r = await ytSearch(s.track.name);
           if (r.videos.length > 0) {

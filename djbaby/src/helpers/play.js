@@ -16,7 +16,7 @@ async function play(guild, song, queue) {
   const songQueue = queue.get(guild.id);
 
   if (!song) {
-    songQueue.voiceChannel.leave();
+    songQueue.connection.destroy();
     queue.delete(guild.id);
     player.stop();
     songQueue.textChannel.send("All songs have been played.");
@@ -33,10 +33,10 @@ async function play(guild, song, queue) {
     });
     player.play(resourse);
     songQueue.connection.subscribe(player);
-    if (player.state.status === AudioPlayerStatus.Idle) {
+    player.on(AudioPlayerStatus.Idle, () => {
       songQueue.songs.shift();
       play(guild, songQueue.songs[0], queue);
-    }
+    });
     await songQueue.textChannel.send(`🎶 Now playing **${song.title}**`);
 
     player.on("error", (err) => {

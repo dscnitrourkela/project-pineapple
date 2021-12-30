@@ -4,7 +4,7 @@ const ytSearch = require("yt-search");
 const { joinVoiceChannel } = require("@discordjs/voice");
 const play = require("../helpers/play");
 
-async function bajao(message, queue) {
+async function bajao(message, queue, player) {
   const serverQueue = queue.get(message.guild.id);
   const args = message.content.split(" ");
 
@@ -99,7 +99,7 @@ async function bajao(message, queue) {
           adapterCreator: voiceChannel.guild.voiceAdapterCreator,
         });
         queueConstructor.connection = connection;
-        play(message.guild, queueConstructor.songs[0], queue);
+        play(message.guild, queueConstructor.songs[0], queue, player);
       } catch (err) {
         queue.delete(message.guild.id);
         message.channel.send("There was an error connecting!");

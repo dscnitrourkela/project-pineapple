@@ -1,17 +1,7 @@
-const {
-  createAudioPlayer,
-  createAudioResource,
-  AudioPlayerStatus,
-  NoSubscriberBehavior,
-} = require("@discordjs/voice");
+const { createAudioResource, AudioPlayerStatus } = require("@discordjs/voice");
 const playdl = require("play-dl");
 
-async function play(guild, song, queue) {
-  const player = createAudioPlayer({
-    behaviors: {
-      noSubscriber: NoSubscriberBehavior.Pause,
-    },
-  });
+async function play(guild, song, queue, player) {
   const songQueue = queue.get(guild.id);
 
   if (!song) {
@@ -30,7 +20,7 @@ async function play(guild, song, queue) {
     songQueue.connection.subscribe(player);
     player.on(AudioPlayerStatus.Idle, () => {
       songQueue.songs.shift();
-      play(guild, songQueue.songs[0], queue);
+      play(guild, songQueue.songs[0], queue, player);
     });
     await songQueue.textChannel.send(`🎶 Now playing **${song.title}**`);
 

@@ -32,16 +32,21 @@ async function bajao(message, queue) {
       const length = data.tracksCount;
       const l = length % 100 === 0 ? length / 100 : length / 100 + 1;
       for (let i = 1; i <= l; i++) {
-        await data.fetched_tracks.get(`${i}`).forEach(async (track) => {
-          const ytResult = await ytSearch(track.name);
-          if (ytResult.videos.length > 0) {
-            const song = {
-              title: ytResult.videos[0].title,
-              url: ytResult.videos[0].url,
-            };
-            songList.push(song);
-          }
-        });
+        const promiseArray = data.fetched_tracks
+          .get(`${i}`)
+          .map(async (track) => {
+            const ytResult = await ytSearch(track.name);
+            if (ytResult.videos.length > 0) {
+              const song = {
+                title: ytResult.videos[0].title,
+                url: ytResult.videos[0].url,
+              };
+              songList.push(song);
+              Promise.resolve();
+            }
+          });
+
+        await Promise.all(promiseArray);
       }
     } catch (error) {
       console.log(error);
@@ -63,6 +68,7 @@ async function bajao(message, queue) {
       songList.push(song);
     }
   }
+
   if (songList.length === 0) {
     return message.channel.send("Error finding your song");
   } else {

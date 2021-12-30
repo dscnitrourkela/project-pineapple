@@ -1,11 +1,10 @@
-const ytdl = require("ytdl-core");
 const {
   createAudioPlayer,
   createAudioResource,
   AudioPlayerStatus,
-  StreamType,
   NoSubscriberBehavior,
 } = require("@discordjs/voice");
+const playdl = require("play-dl");
 
 async function play(guild, song, queue) {
   const player = createAudioPlayer({
@@ -23,13 +22,9 @@ async function play(guild, song, queue) {
     return;
   }
   try {
-    const stream = ytdl(song.url, {
-      filter: "audio",
-      quality: "highestaudio",
-      highWaterMark: 1 << 25,
-    });
-    const resourse = createAudioResource(stream, {
-      inputType: StreamType.Arbitrary,
+    const stream = await playdl.stream(song.url);
+    const resourse = createAudioResource(stream.stream, {
+      inputType: stream.type,
     });
     player.play(resourse);
     songQueue.connection.subscribe(player);

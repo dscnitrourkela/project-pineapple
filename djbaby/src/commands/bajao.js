@@ -30,6 +30,10 @@ async function bajao(message, queue) {
       const data = await playdl.spotify(info);
       await data.fetch();
       const length = data.tracksCount;
+      if (length > 0)
+        message.channel.send(
+          `${length} songs found! Indexing started... Please wait!`
+        );
       const l = length % 100 === 0 ? length / 100 : length / 100 + 1;
       for (let i = 1; i <= l; i++) {
         const promiseArray = data.fetched_tracks

@@ -1,6 +1,6 @@
 const ytdl = require("ytdl-core");
+const playdl = require("play-dl");
 const ytSearch = require("yt-search");
-const axios = require("axios");
 const { joinVoiceChannel } = require("@discordjs/voice");
 const play = require("../helpers/play");
 
@@ -21,38 +21,49 @@ async function bajao(message, queue) {
     );
   }
   let info = args.slice(3, args.length + 1).join(" ");
-  let song;
-  let songList;
+  const songList = [];
   if (info.startsWith("https://open.spotify.com/playlist/")) {
-    const playlistID = info.split("/")[4];
     try {
-      const data = await axios.get(
-        `https://api.spotify.com/v1/playlists/${playlistID}/tracks`,
-        { headers: { Authorization: `Bearer ${process.env.SPOTIFY_TOKEN}` } }
-      );
-      songList = data.data.items;
-      info = songList[0].track.name;
-      songList.shift();
+      if (playdl.is_expired()) {
+        await playdl.refreshToken();
+      }
+      const data = await playdl.spotify(info);
+      await data.fetch();
+      const length = data.tracksCount;
+      const l = length % 100 === 0 ? length / 100 : length / 100 + 1;
+      for (let i = 1; i <= l; i++) {
+        await data.fetched_tracks.get(`${i}`).forEach(async (track) => {
+          const ytResult = await ytSearch(track.name);
+          if (ytResult.videos.length > 0) {
+            const song = {
+              title: ytResult.videos[0].title,
+              url: ytResult.videos[0].url,
+            };
+            songList.push(song);
+          }
+        });
+      }
     } catch (error) {
       console.log(error);
     }
-  }
-  if (ytdl.validateURL(info)) {
+  } else if (ytdl.validateURL(info)) {
     const songInfo = await ytdl.getInfo(info);
-    song = {
+    const song = {
       title: songInfo.videoDetails.title,
       url: songInfo.videoDetails.video_url,
     };
+    songList.push(song);
   } else {
-    r = await ytSearch(info);
-    if (r.videos.length > 0) {
-      song = {
-        title: r.videos[0].title,
-        url: r.videos[0].url,
+    const ytResult = await ytSearch(info);
+    if (ytResult.videos.length > 0) {
+      const song = {
+        title: ytResult.videos[0].title,
+        url: ytResult.videos[0].url,
       };
+      songList.push(song);
     }
   }
-  if (!song) {
+  if (songList.length === 0) {
     return message.channel.send("Error finding your song");
   } else {
     if (!serverQueue) {
@@ -66,7 +77,9 @@ async function bajao(message, queue) {
 
       //Add our key and value pair into the global queue. We then use this to get our server queue.
       queue.set(message.guild.id, queueConstructor);
-      queueConstructor.songs.push(song);
+      songList.forEach((s) => {
+        queueConstructor.songs.push(s);
+      });
 
       try {
         const connection = joinVoiceChannel({
@@ -77,40 +90,18 @@ async function bajao(message, queue) {
         });
         queueConstructor.connection = connection;
         play(message.guild, queueConstructor.songs[0], queue);
-        if (songList && songList.length > 0) {
-          songList.map(async (s) => {
-            r = await ytSearch(s.track.name);
-            if (r.videos.length > 0) {
-              song = {
-                title: r.videos[0].title,
-                url: r.videos[0].url,
-              };
-              queueConstructor.songs.push(song);
-            }
-          });
-        }
       } catch (err) {
         queue.delete(message.guild.id);
         message.channel.send("There was an error connecting!");
         throw err;
       }
     } else {
-      serverQueue.songs.push(song);
-      if (songList && songList.length > 0) {
-        songList.map(async (s) => {
-          r = await ytSearch(s.track.name);
-          if (r.videos.length > 0) {
-            song = {
-              title: r.videos[0].title,
-              url: r.videos[0].url,
-            };
-            serverQueue.songs.push(song);
-          }
-        });
-      }
+      songList.forEach((s) => {
+        serverQueue.songs.push(s);
+      });
       return message.channel.send("Added to the queue!");
     }
-    return message.channel.send(`👍 **${song.title}** added to queue!`);
+    return message.channel.send(`👍 added to queue!`);
   }
 }
 
